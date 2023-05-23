@@ -13,20 +13,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.json.JSONObject
-import ua.dokser.akmiamb.mainItemsList
+import ua.dokser.akmiamb.R
 import ua.dokser.akmiamb.models.Item
 import ua.dokser.akmiamb.models.MainItem
 import java.io.IOException
 
 
-val favoriteItems = arrayListOf<Item>()
-
+val favoriteItemsCod = arrayListOf<String>()
+var items = arrayListOf<Item>()
+lateinit var item:Item
+val cardModifier = Modifier
+    .fillMaxWidth()
+    .padding(10.dp)
 @Composable
-fun ViewMainItem(context: Context,mainItemsList: ArrayList<MainItem>){
+fun ViewMainItem(mainItemsList: ArrayList<MainItem>, onClick: () -> Unit){
 
     LazyColumn(
         horizontalAlignment = Alignment.Start,
@@ -36,10 +39,13 @@ fun ViewMainItem(context: Context,mainItemsList: ArrayList<MainItem>){
     {
         items (count = mainItemsList.size){
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Blue)
-                    .padding(5.dp),
+                modifier = cardModifier
+                    .clickable
+                    {
+                        onClick()
+                        items = mainItemsList[it].items
+                        Log.d("MyLog", "CLICK")
+                    },
                 shape = RoundedCornerShape(10.dp),
                 elevation = 10.dp
 
@@ -47,12 +53,7 @@ fun ViewMainItem(context: Context,mainItemsList: ArrayList<MainItem>){
                 Text(
                     text = mainItemsList[it].title,
                     fontSize = 24.sp,
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .clickable
-                        {
-                            Log.d("MyLog", "CLICK")
-                        }
+                    modifier = cardModifier
 
                 )
             }
@@ -65,19 +66,59 @@ fun ViewMainItem(context: Context,mainItemsList: ArrayList<MainItem>){
 }
 
 @Composable
-fun ViewItem( item: Item ) {
-    //test
+fun ViewItems(onClick: () -> Unit){
+    LazyColumn(
+        horizontalAlignment = Alignment.Start,
+        modifier = Modifier
+            .fillMaxHeight()
+    )
+    {
+        items (count = items.size){
+            val isInFavorList = favoriteItemsCod.contains(items[it].cod)
+            val itemInList = Item(items[it].cod,items[it].name,isInFavorList)
 
-    val item: Item = Item(item.cod,item.name)
+            Card(
+                modifier = cardModifier.clickable {
+                    onClick()
+                    item = items[it]
+                }
+            ) {
+                Column {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = itemInList.cod,
+                            color = Color.Blue,
+                            modifier = Modifier
+                                .fillMaxWidth(0.6f)
+                                .padding(10.dp)
+                                )
+                        Image( modifier = cardModifier,
+                            alignment = Alignment.Center,
+                            painter =  if (itemInList.isFavorite)
+                                painterResource(R.drawable.favorite)
+                            else painterResource(R.drawable.not_favorite),
+                            contentDescription = "img",
+                        )
+                    }
+
+                    Text(text = itemInList.name,
+                        color = Color.Black,
+                        modifier = cardModifier)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ViewItem() {
+
     var isFavoriteState by remember { mutableStateOf(item.isFavorite) }
-
-
-
     val paddingModifier = Modifier.padding(10.dp)
+
     Card(
         modifier = paddingModifier
     ) {
-        Column() {
+        Column {
             Row(horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(text = item.cod,
                     color = Color.Blue,
@@ -93,33 +134,25 @@ fun ViewItem( item: Item ) {
                     },
                     alignment = Alignment.Center,
                     painter =  if (isFavoriteState)
-                        painterResource(ua.dokser.akmiamb.R.drawable.favorite)
-                    else painterResource(ua.dokser.akmiamb.R.drawable.not_favorite),
+                        painterResource(R.drawable.favorite)
+                    else painterResource(R.drawable.not_favorite),
                     contentDescription = "img",
                 )
             }
-
             Text(text = item.name,
                 color = Color.Black,
                 modifier = paddingModifier)
-
-
         }
     }
-
 }
 
 fun changeFavorite(item: Item) {
 
     item.isFavorite = !item.isFavorite
 
-    if (item.isFavorite == true)
-        favoriteItems.add(item)
-    else favoriteItems.remove(item)
-}
-
-fun getMainItemsList(){
-    val mainItems = arrayListOf<MainItem>()
+    if (item.isFavorite)
+        favoriteItemsCod.add(item.cod)
+    else favoriteItemsCod.remove(item.cod)
 }
 
 fun getData(context: Context, fileName: String = "data.json"): JSONObject? {
@@ -132,3 +165,9 @@ fun getData(context: Context, fileName: String = "data.json"): JSONObject? {
     }
     return JSONObject(jsonString)
 }
+//fun addToFavoriteListFile(){
+//
+//    var str = ""
+//    favoriteItemsCod.forEach { str = str + it +"," }
+//    File("favoriteList.txt").writeText(str,Charsets.UTF_8)
+//}

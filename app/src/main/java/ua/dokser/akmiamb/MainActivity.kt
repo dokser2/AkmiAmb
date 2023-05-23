@@ -1,35 +1,25 @@
+@file:Suppress("NAME_SHADOWING")
+
 package ua.dokser.akmiamb
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import org.json.JSONObject
 import ua.dokser.akmiamb.models.Item
 import ua.dokser.akmiamb.models.MainItem
 import ua.dokser.akmiamb.ui.theme.AkmiAmbTheme
 import ua.dokser.akmiamb.viewModel.ViewItem
+import ua.dokser.akmiamb.viewModel.ViewItems
 import ua.dokser.akmiamb.viewModel.ViewMainItem
 import ua.dokser.akmiamb.viewModel.getData
-import ua.dokser.akmiamb.viewModel.getMainItemsList
 
 lateinit var jsonObject: JSONObject
-var mainItemsList = arrayListOf<MainItem>()
+var mainItemsList =  arrayListOf<MainItem>()
+
 
 
 class MainActivity : ComponentActivity() {
@@ -37,31 +27,42 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AkmiAmbTheme {
-                // A surface container using the 'background' color from the theme
+
+                val navController = rememberNavController()
                 jsonObject = getData(this)!!
                 mainItemsList = getMainItemsList(jsonObject)
 
-                ViewMainItem(context = this, mainItemsList = mainItemsList)
-
-}
-
-
-
-
-            
+                NavHost(
+                    navController = navController,
+                    startDestination = "main_items"
+                )
+                {
+                    composable("main_items") {
+                        ViewMainItem(mainItemsList = mainItemsList) {
+                            navController.navigate("items")
+                        }
+                    }
+                    composable("items") {
+                        ViewItems {
+                            navController.navigate("item")
+                        }
+                    }
+                    composable("item") {
+                        ViewItem()
+                    }
+                }
             }
         }
     }
+}
 
 
-fun getMainItemsList(jsonObject: JSONObject):ArrayList<MainItem>
-
-{
-    for (index in 1 ..11){
+fun getMainItemsList(jsonObject: JSONObject): ArrayList<MainItem> {
+    for (index in 1..11) {
         val str = "9.$index"
         val jsonObjectArray = jsonObject.getJSONArray(str)
         val itemsList = arrayListOf<Item>()
-        val title = when(str){
+        val title = when (str) {
             "9.1" -> "Консультування"
             "9.2" -> "Основні лабораторні дослідження"
             "9.3" -> "Специфічні лабораторні дослідження"
@@ -81,9 +82,9 @@ fun getMainItemsList(jsonObject: JSONObject):ArrayList<MainItem>
                     itemsList.add(Item(cod, name))
              }
 
-         mainItemsList.add(MainItem(title,itemsList))
+        mainItemsList.add(MainItem(title, itemsList))
 
-        }
+    }
 
     return mainItemsList
 }
